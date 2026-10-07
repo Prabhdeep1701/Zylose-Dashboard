@@ -48,7 +48,7 @@ export function useApiData<T>(
 }
 
 export function usePolling(
-  callback: () => void,
+  callback: () => void | Promise<void>,
   intervalMs: number,
   enabled = true
 ) {
@@ -60,7 +60,34 @@ export function usePolling(
 
   useEffect(() => {
     if (!enabled) return;
-    const id = setInterval(() => callbackRef.current(), intervalMs);
-    return () => clearInterval(id);
+    let stopped = false;
+    let running = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    const run = async () => {
+      if (stopped || running) return;
+      running = true;
+      try {
+        await callbackRef.current();
+      } finally {
+        running = false;
+        if (!stopped) timeout = setTimeout(run, intervalMs);
+      }
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void run();
+    };
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    window.addEventListener("focus", refreshWhenVisible);
+    timeout = setTimeout(run, intervalMs);
+
+    return () => {
+      stopped = true;
+      if (timeout) clearTimeout(timeout);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      window.removeEventListener("focus", refreshWhenVisible);
+    };
   }, [intervalMs, enabled]);
 }

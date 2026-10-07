@@ -22,7 +22,7 @@ export default function DashboardPage() {
 
   usePolling(() => {
     dashboardResult.refetch();
-  }, 10_000);
+  }, 5_000);
 
   const events = dashboardResult.data?.events || [];
   const latestEvent = events[0] || null;

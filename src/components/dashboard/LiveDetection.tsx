@@ -122,7 +122,6 @@ export function LiveDetection({ latestEvent }: LiveDetectionProps) {
                   <span className="text-5xl md:text-6xl font-bold tracking-tighter text-white">
                     {event.confidence}
                   </span>
-                  <span className="text-lg text-zinc-400 font-medium">%</span>
                 </div>
 
                 <p className="text-[13px] text-zinc-500 font-medium uppercase tracking-wider">

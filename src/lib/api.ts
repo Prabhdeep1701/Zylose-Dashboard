@@ -7,6 +7,8 @@ import type {
   ApiDashboardResponse,
 } from "./types";
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+
 class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
@@ -18,7 +20,7 @@ async function apiFetch<T>(
   path: string,
   init?: RequestInit
 ): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
     cache: "no-store",
     headers: {

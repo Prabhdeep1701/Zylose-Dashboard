@@ -4,17 +4,24 @@ import type { ApiDetectionType } from "@/lib/types";
 
 export async function GET() {
   try {
-    const { data: rows, error } = await supabase
-      .from("events")
-      .select("id, device_id, timestamp, result, confidence, unknown_score, silence_score, status")
-      .order("timestamp", { ascending: false });
+    const [recentResult, aggregateResult] = await Promise.all([
+      supabase
+        .from("events")
+        .select("id, device_id, timestamp, result, confidence, unknown_score, silence_score, status")
+        .order("timestamp", { ascending: false })
+        .limit(20),
+      supabase
+        .from("events")
+        .select("timestamp, result, confidence"),
+    ]);
 
-    if (error) {
-      console.error("Supabase dashboard query error:", error);
+    if (recentResult.error || aggregateResult.error) {
+      console.error("Supabase dashboard query error:", recentResult.error || aggregateResult.error);
       return NextResponse.json({ error: "Failed to fetch dashboard data" }, { status: 500 });
     }
 
-    const events = rows || [];
+    const events = aggregateResult.data || [];
+    const recentEvents = recentResult.data || [];
     const todayIso = new Date().toISOString().slice(0, 10);
     const distribution = { zylose: 0, unknown: 0, silence: 0 };
     const hourlyMap: Record<string, { zylose: number; unknown: number; silence: number }> = {};
@@ -52,7 +59,7 @@ export async function GET() {
       : 0;
 
     return NextResponse.json({
-      events: events.slice(0, 20),
+      events: recentEvents,
       stats: {
         total_zylose: distribution.zylose,
         total_unknown: distribution.unknown,
